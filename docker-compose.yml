@@ -1,0 +1,24 @@
+version: '3.9'
+
+services:
+  backend:
+    build: ./backend
+    environment:
+      - MONGO_URL=mongodb+srv://umangrathod797:U1234567@umangrathod.xof4uyb.mongodb.net/FitHabit?retryWrites=true&w=majority
+    ports:
+      - "5000:5000"
+    networks:
+      - mern_app_network
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - mern_app_network
+
+networks:
+  mern_app_network:
+    driver: bridge
