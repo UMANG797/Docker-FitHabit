@@ -12,6 +12,8 @@ services:
 
   frontend:
     build: ./frontend
+    environment:
+      - REACT_APP_API_URL=http://YOUR_ELASTIC_IP:5000   # <-- Add this line
     ports:
       - "3000:3000"
     depends_on:

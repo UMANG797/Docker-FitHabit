@@ -100,7 +100,7 @@ function NewHabitForm({ onCreated }) {
     }
     
     try {
-      await axios.post('/api/habits', { title, description: desc });
+      await axios.post(`${process.env.REACT_APP_API_URL}/api/habits`, { title, description: desc });
       setTitle('');
       setDesc('');
       setIsExpanded(false);
@@ -184,7 +184,7 @@ function HabitCard({ habit, onUpdated, onDeleted }) {
 
   const complete = async () => {
     try {
-      await axios.post(`/api/habits/${habit._id}/complete`);
+      await axios.post(`${process.env.REACT_APP_API_URL}/api/habits/${habit._id}/complete`);
       onUpdated && onUpdated();
     } catch (error) {
       console.error('Error completing habit:', error);
@@ -195,7 +195,7 @@ function HabitCard({ habit, onUpdated, onDeleted }) {
   const reset = async () => {
     if (!window.confirm('Reset this habit streak?')) return;
     try {
-      await axios.put(`/api/habits/${habit._id}/reset`);
+      await axios.put(`${process.env.REACT_APP_API_URL}/api/habits/${habit._id}/reset`);
       onUpdated && onUpdated();
     } catch (error) {
       console.error('Error resetting habit:', error);
@@ -206,7 +206,7 @@ function HabitCard({ habit, onUpdated, onDeleted }) {
   const del = async () => {
     if (!window.confirm('Delete this habit permanently?')) return;
     try {
-      await axios.delete(`/api/habits/${habit._id}`);
+      await axios.delete(`${process.env.REACT_APP_API_URL}/api/habits/${habit._id}`);
       onDeleted && onDeleted();
     } catch (error) {
       console.error('Error deleting habit:', error);
@@ -325,7 +325,7 @@ export default function App() {
   const fetchHabits = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/habits');
+      const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/habits`);
       setHabits(res.data);
     } catch (error) {
       console.error('Error fetching habits:', error);
