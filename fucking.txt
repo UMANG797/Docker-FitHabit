@@ -1,36 +1,56 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { Trophy, Flame, Target, Star, Award, Zap, Crown, TrendingUp, CheckCircle, Gift, Plus, X, RotateCcw, TrendingDown } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Trophy, Flame, Target, Star, Award, Zap, Crown, TrendingUp, CheckCircle, Calendar, Gift, Plus, X, RotateCcw } from 'lucide-react';
 
 // Badge System with detailed descriptions
 const BADGE_SYSTEM = {
-  '7-day': {
+  'streak_3': {
+    icon: Flame,
+    name: 'Getting Started',
+    description: 'Completed 3 days in a row',
+    color: 'from-orange-400 to-red-500',
+    requirement: 3
+  },
+  'streak_7': {
     icon: Target,
-    name: '7-Day Warrior',
+    name: 'Week Warrior',
     description: 'Maintained a 7-day streak',
     color: 'from-blue-400 to-blue-600',
     requirement: 7
   },
-  '30-day': {
+  'streak_14': {
+    icon: Star,
+    name: 'Two Week Champion',
+    description: 'Conquered 14 consecutive days',
+    color: 'from-purple-400 to-purple-600',
+    requirement: 14
+  },
+  'streak_30': {
     icon: Award,
-    name: '30-Day Master',
+    name: 'Monthly Master',
     description: 'Achieved a full 30-day streak',
     color: 'from-yellow-400 to-orange-500',
     requirement: 30
   },
-  '90-day': {
+  'streak_60': {
     icon: Zap,
-    name: '90-Day Champion',
-    description: 'Reached an incredible 90-day streak',
+    name: 'Unstoppable',
+    description: 'Reached an incredible 60-day streak',
     color: 'from-cyan-400 to-blue-500',
-    requirement: 90
+    requirement: 60
   },
-  '180-day': {
+  'streak_100': {
     icon: Crown,
-    name: '180-Day Legend',
-    description: 'Legendary 180-day achievement',
+    name: 'Century Club',
+    description: 'Legendary 100-day achievement',
     color: 'from-yellow-300 via-yellow-500 to-yellow-700',
-    requirement: 180
+    requirement: 100
+  },
+  'comeback': {
+    icon: TrendingUp,
+    name: 'Comeback King',
+    description: 'Restarted after a break and hit 5 days',
+    color: 'from-green-400 to-emerald-600',
+    requirement: 'special'
   }
 };
 
@@ -65,7 +85,7 @@ function BadgeShowcase() {
       </div>
       <p className="text-sm text-gray-600 mb-6">Build streaks to unlock exclusive badges and celebrate your progress!</p>
       
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {Object.entries(BADGE_SYSTEM).map(([id, badge]) => {
           const Icon = badge.icon;
           return (
@@ -76,9 +96,11 @@ function BadgeShowcase() {
               <div className="text-center">
                 <div className="font-semibold text-gray-800 text-sm mb-1">{badge.name}</div>
                 <div className="text-xs text-gray-500">{badge.description}</div>
-                <div className="mt-2 inline-block px-2 py-1 bg-gray-200 rounded-full text-xs font-medium text-gray-700">
-                  {badge.requirement} days
-                </div>
+                {badge.requirement !== 'special' && (
+                  <div className="mt-2 inline-block px-2 py-1 bg-gray-200 rounded-full text-xs font-medium text-gray-700">
+                    {badge.requirement} days
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -93,22 +115,27 @@ function NewHabitForm({ onCreated }) {
   const [desc, setDesc] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const create = async () => {
+  const create = () => {
     if (!title.trim()) {
       alert('Please add a title');
       return;
     }
     
-    try {
-      await axios.post('/api/habits', { title, description: desc });
-      setTitle('');
-      setDesc('');
-      setIsExpanded(false);
-      onCreated && onCreated();
-    } catch (error) {
-      console.error('Error creating habit:', error);
-      alert('Failed to create habit. Please try again.');
-    }
+    const newHabit = {
+      _id: Date.now().toString(),
+      title,
+      description: desc || 'No description',
+      streak: 0,
+      bestStreak: 0,
+      badges: [],
+      lastCompleted: null,
+      createdAt: new Date().toISOString()
+    };
+    
+    onCreated(newHabit);
+    setTitle('');
+    setDesc('');
+    setIsExpanded(false);
   };
 
   return (
@@ -146,11 +173,7 @@ function NewHabitForm({ onCreated }) {
               Add Habit
             </button>
             <button
-              onClick={() => {
-                setIsExpanded(false);
-                setTitle('');
-                setDesc('');
-              }}
+              onClick={() => setIsExpanded(false)}
               className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-colors"
             >
               Cancel
@@ -165,53 +188,38 @@ function NewHabitForm({ onCreated }) {
 function HabitCard({ habit, onUpdated, onDeleted }) {
   const calculateBadges = (streak) => {
     const badges = [];
-    if (streak >= 7) badges.push('7-day');
-    if (streak >= 30) badges.push('30-day');
-    if (streak >= 90) badges.push('90-day');
-    if (streak >= 180) badges.push('180-day');
+    if (streak >= 3) badges.push('streak_3');
+    if (streak >= 7) badges.push('streak_7');
+    if (streak >= 14) badges.push('streak_14');
+    if (streak >= 30) badges.push('streak_30');
+    if (streak >= 60) badges.push('streak_60');
+    if (streak >= 100) badges.push('streak_100');
     return badges;
   };
 
-  const currentBadges = habit.badges || calculateBadges(habit.streak);
-  const allBadgeThresholds = [
-    { id: '7-day', req: 7 },
-    { id: '30-day', req: 30 },
-    { id: '90-day', req: 90 },
-    { id: '180-day', req: 180 }
-  ];
-  
-  const nextBadge = allBadgeThresholds.find(b => habit.streak < b.req);
+  const currentBadges = calculateBadges(habit.streak);
+  const nextBadge = Object.entries(BADGE_SYSTEM).find(
+    ([id, badge]) => badge.requirement !== 'special' && habit.streak < badge.requirement
+  );
 
-  const complete = async () => {
-    try {
-      await axios.post(`/api/habits/${habit._id}/complete`);
-      onUpdated && onUpdated();
-    } catch (error) {
-      console.error('Error completing habit:', error);
-      alert('Failed to complete habit. Please try again.');
-    }
+  const complete = () => {
+    const updated = {
+      ...habit,
+      streak: habit.streak + 1,
+      bestStreak: Math.max(habit.bestStreak, habit.streak + 1),
+      lastCompleted: new Date().toISOString()
+    };
+    onUpdated(updated);
   };
 
-  const reset = async () => {
+  const reset = () => {
     if (!window.confirm('Reset this habit streak?')) return;
-    try {
-      await axios.put(`/api/habits/${habit._id}/reset`);
-      onUpdated && onUpdated();
-    } catch (error) {
-      console.error('Error resetting habit:', error);
-      alert('Failed to reset habit. Please try again.');
-    }
+    onUpdated({ ...habit, streak: 0 });
   };
 
-  const del = async () => {
+  const del = () => {
     if (!window.confirm('Delete this habit permanently?')) return;
-    try {
-      await axios.delete(`/api/habits/${habit._id}`);
-      onDeleted && onDeleted();
-    } catch (error) {
-      console.error('Error deleting habit:', error);
-      alert('Failed to delete habit. Please try again.');
-    }
+    onDeleted(habit._id);
   };
 
   const progress = habit.streak === 0 ? 0 : Math.min(100, (habit.streak / 30) * 100);
@@ -230,7 +238,7 @@ function HabitCard({ habit, onUpdated, onDeleted }) {
             <span className="text-xl font-bold text-orange-700">{habit.streak}</span>
           </div>
         </div>
-        <p className="text-gray-600 text-base leading-relaxed">{habit.description || 'No description'}</p>
+        <p className="text-gray-600 text-base leading-relaxed">{habit.description}</p>
       </div>
 
       {/* Progress Section */}
@@ -269,7 +277,7 @@ function HabitCard({ habit, onUpdated, onDeleted }) {
           <div className="text-sm text-gray-500">
             {nextBadge ? (
               <>
-                <span className="font-semibold text-blue-600">{nextBadge.req - habit.streak} more days</span> to unlock "{BADGE_SYSTEM[nextBadge.id].name}"
+                <span className="font-semibold text-blue-600">{nextBadge[1].requirement - habit.streak} more days</span> to unlock "{nextBadge[1].name}"
               </>
             ) : 'Keep going to unlock badges!'}
           </div>
@@ -285,7 +293,7 @@ function HabitCard({ habit, onUpdated, onDeleted }) {
         {nextBadge && (
           <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg border border-blue-200">
             <Target className="w-4 h-4 text-blue-600" />
-            <span className="text-gray-700">Next: <strong className="text-blue-700">{nextBadge.req}</strong></span>
+            <span className="text-gray-700">Next: <strong className="text-blue-700">{nextBadge[1].requirement}</strong></span>
           </div>
         )}
       </div>
@@ -320,29 +328,25 @@ function HabitCard({ habit, onUpdated, onDeleted }) {
 
 export default function App() {
   const [habits, setHabits] = useState([]);
-  const [loading, setLoading] = useState(false);
 
-  const fetchHabits = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get('/api/habits');
-      setHabits(res.data);
-    } catch (error) {
-      console.error('Error fetching habits:', error);
-    }
-    setLoading(false);
+  const addHabit = (newHabit) => {
+    setHabits([...habits, newHabit]);
   };
 
-  useEffect(() => { 
-    fetchHabits(); 
-  }, []);
+  const updateHabit = (updated) => {
+    setHabits(habits.map(h => h._id === updated._id ? updated : h));
+  };
+
+  const deleteHabit = (id) => {
+    setHabits(habits.filter(h => h._id !== id));
+  };
 
   const avgStreak = habits.length
-    ? (habits.reduce((sum, h) => sum + (h.streak || 0), 0) / habits.length).toFixed(1)
+    ? (habits.reduce((sum, h) => sum + h.streak, 0) / habits.length).toFixed(1)
     : 0;
 
   const totalBadges = habits.reduce((sum, h) => {
-    const badges = [7, 30, 90, 180].filter(req => h.streak >= req);
+    const badges = [3, 7, 14, 30, 60, 100].filter(req => h.streak >= req);
     return sum + badges.length;
   }, 0);
 
@@ -403,14 +407,9 @@ export default function App() {
 
         <BadgeShowcase />
 
-        <NewHabitForm onCreated={fetchHabits} />
+        <NewHabitForm onCreated={addHabit} />
 
-        {loading ? (
-          <div className="bg-white rounded-2xl shadow-lg p-16 text-center border-2 border-gray-200">
-            <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600 text-lg">Loading your habits...</p>
-          </div>
-        ) : habits.length === 0 ? (
+        {habits.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-lg p-16 text-center border-2 border-gray-200">
             <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
               <Star className="w-12 h-12 text-gray-400" />
@@ -424,8 +423,8 @@ export default function App() {
               <HabitCard
                 key={habit._id}
                 habit={habit}
-                onUpdated={fetchHabits}
-                onDeleted={fetchHabits}
+                onUpdated={updateHabit}
+                onDeleted={deleteHabit}
               />
             ))}
           </div>
